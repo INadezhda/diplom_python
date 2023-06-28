@@ -38,11 +38,29 @@ def see_photos(user_search_id):
         attachment += f'photo{photo["owner_id"]}_{photo["id_photo"]},'
     return attachment
 
+# def find_user(user_spr, user_msg):
+#     user = user_spr.pop()
+#     find = find_user_vk(user_id=user['id'])
+#     if find is None:
+#         attachment = see_photos(user_search_id=user['id'])
+#         write_msg(
+#             user_msg,
+#             f'{user["name"]}  vk.com/{user["id"]}',
+#             attachment=attachment)
+#         add_user_vk(user_id=user['id'])
+#         write_msg(user_msg, f'продолжим поиск?(да/нет)')
+#     else:
+#         return 0
+
 
 def find_user(user_spr, user_msg):
-    user = user_spr.pop()
-    find = find_user_vk(user_id=user['id'])
-    if find is None:
+    spr = []
+    for i in user_spr:
+        find = find_user_vk(user_id=i['id'])
+        if find is None:
+            spr.append(i)
+    if spr != []:
+        user = spr.pop()
         attachment = see_photos(user_search_id=user['id'])
         write_msg(
             user_msg,
@@ -50,6 +68,8 @@ def find_user(user_spr, user_msg):
             attachment=attachment)
         add_user_vk(user_id=user['id'])
         write_msg(user_msg, f'продолжим поиск?(да/нет)')
+    else:
+        return 0
 
 
 def check_user_info(res, user_id):
@@ -95,7 +115,7 @@ def check_user_info(res, user_id):
         family_position = input_family_position(longpoll)
         text = {'relation': int(family_position)}
         res.update(text)
-    pprint(res)
+    # pprint(res)
     return res
 
 
@@ -140,7 +160,6 @@ def input_user_town(longpoll):
                     spr_town = get_user_city(town=request, vk_token=vk_token)
                     if spr_town == 1:
                         title = request
-                        print(title)
                         write_msg(event.user_id, f'принято')
                         return title
                     else:
@@ -157,13 +176,28 @@ def input_family_position(longpoll):
                 request = event.text
                 while True:
                     family_position = request
-                    if family_position.isdigit()==True:
+                    if family_position.isdigit() == True:
                         write_msg(event.user_id, f'принято')
                         return family_position
                     else:
                         write_msg(event.user_id,
                                   f'введите семейное положение корректно:')
                         break
+
+
+def filter_user_spr(user_spr):
+    filter_spr = []
+    filter_no_spr = []
+    for i in user_spr:
+        find = find_user_vk(user_id=i['id'])
+        if find is None:
+            filter_spr.append(i)
+        else:
+            filter_no_spr.append(i)
+        if len(filter_no_spr) == len(user_spr):
+            return 0
+        elif len(filter_spr) > 0:
+            return user_spr
 
 
 def bot_communication(longpoll):
@@ -182,23 +216,39 @@ def bot_communication(longpoll):
                     res = acquaintance_me(user_id=event.user_id, token=token)
                     write_msg(event.user_id, f'можно попробовать')
                     res = check_user_info(res=res, user_id=event.user_id)
-                    # res=res
-                    Create_tables()
-                    #offset = count_offset()
-                    offset = 0
+                    offset = count_offset()
                     user_spr = acquaintance_you(
                         res, offset=offset, vk_token=vk_token)
+                    while True:
+                        condition = filter_user_spr(user_spr)
+                        if condition == 0:
+                            print(f'снова пустой поиск')
+                            offset = offset + 30
+                            user_spr = acquaintance_you(res, offset, vk_token)
+                        else:
+                            break
                     find_user(user_spr, user_msg=event.user_id)
-                    offset = offset + 5
                 elif request == 'нет':
                     write_msg(event.user_id, f'жаль')
                 elif request == 'да':
-                    user_spr = acquaintance_you(
-                        res, offset=offset, vk_token=vk_token)
-                    find_user(user_spr, user_msg=event.user_id)
-                    offset = offset + 5
+                    x = find_user(user_spr, user_msg=event.user_id)
+                    if x == 0:
+                        offset = offset + 30
+                        user_spr = acquaintance_you(
+                            res, offset=offset, vk_token=vk_token)
+                        while True:
+                            condition = filter_user_spr(user_spr)
+                            if condition == 0:
+                                print(f'снова пустой поиск')
+                                offset = offset + 30
+                                user_spr = acquaintance_you(
+                                    res, offset, vk_token)
+                            else:
+                                find_user(user_spr, user_msg=event.user_id)
+                                break
                 else:
                     write_msg(event.user_id, f'не понимаю о чем вы ')
 
 
+Create_tables()
 bot_communication(longpoll=longpoll)
