@@ -38,21 +38,6 @@ def see_photos(user_search_id):
         attachment += f'photo{photo["owner_id"]}_{photo["id_photo"]},'
     return attachment
 
-# def find_user(user_spr, user_msg):
-#     user = user_spr.pop()
-#     find = find_user_vk(user_id=user['id'])
-#     if find is None:
-#         attachment = see_photos(user_search_id=user['id'])
-#         write_msg(
-#             user_msg,
-#             f'{user["name"]}  vk.com/{user["id"]}',
-#             attachment=attachment)
-#         add_user_vk(user_id=user['id'])
-#         write_msg(user_msg, f'продолжим поиск?(да/нет)')
-#     else:
-#         return 0
-
-
 def find_user(user_spr, user_msg):
     spr = []
     for i in user_spr:
